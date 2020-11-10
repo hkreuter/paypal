@@ -25,6 +25,7 @@ class CaptureAndRefundCest
         $I->haveInDatabase('oxobject2payment', Fixtures::get('paymentMethod'));
         $I->haveInDatabase('oxobject2payment', Fixtures::get('paymentCountry'));
         $I->updateInDatabase('oxuser', Fixtures::get('adminData'), ['OXUSERNAME' => 'admin']);
+        $I->activatePaypalModule();
     }
 
     /**
@@ -35,7 +36,6 @@ class CaptureAndRefundCest
      */
     public function orderCaptureAndRefundAmount(AcceptanceTester $I)
     {
-        $I->setPayPalSettingsData();
         $I->updateConfigInDatabase('sOEPayPalTransactionMode', 'Authorization', 'str');
 
         $basket = new Basket($I);
