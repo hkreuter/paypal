@@ -49,8 +49,8 @@ class CaptureAndRefundCest
         $I->click("#paypalExpressCheckoutMiniBasketImage");
 
         $loginPage = new PayPalLogin($I);
-        $paypalUserEmail = getenv('sBuyerLogin');
-        $paypalUserPassword = getenv('sBuyerPassword');
+        $paypalUserEmail = $_ENV['sBuyerLogin'];
+        $paypalUserPassword = $_ENV['sBuyerPassword'];
 
         $loginPage->loginAndCheckout($paypalUserEmail, $paypalUserPassword);
 
