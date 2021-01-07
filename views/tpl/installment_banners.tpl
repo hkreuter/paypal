@@ -25,7 +25,7 @@
         newNodeInner.setAttribute('data-pp-style-color', "[{$oViewConf->getPayPalBannersColorScheme()}]");
         newNodeInner.setAttribute('data-pp-countryCode', "[{$oViewConf->getActLanguageAbbr()|upper}]");
         newNodeInner.setAttribute('data-pp-style-logo-type', 'inline');
-        newNodeInner.setAttribute('data-pp-style-ratio', "[{$size}]");
+        newNodeInner.setAttribute('data-pp-style-ratio', '[{$size}]');
         newNodeInner.setAttribute('data-pp-style-text-size', '16');
         newNodeInner.setAttribute('data-pp-amount', [{$amount}]);
         newNode.insertBefore(newNodeInner, newNode.nextSibling);

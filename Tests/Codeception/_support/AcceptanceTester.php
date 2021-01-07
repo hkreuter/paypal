@@ -164,9 +164,8 @@ class AcceptanceTester extends \Codeception\Actor
         $I = $this;
 
         $onloadMethod = $I->executeJS("return PayPalMessage.toString()");
-        $I->assertRegExp($this->prepareMessagePartRegex(sprintf("amount: %s", $amount)), $onloadMethod);
-        $I->assertRegExp($this->prepareMessagePartRegex(sprintf("ratio: '%s'", $ratio)), $onloadMethod);
-        $I->assertRegExp($this->prepareMessagePartRegex(sprintf("currency: '%s'", $currency)), $onloadMethod);
+        $I->assertContains(sprintf("'data-pp-amount', %s", $amount), $onloadMethod);
+        $I->assertContains(sprintf("'data-pp-style-ratio', '%s'", $ratio), $onloadMethod);
     }
 
     /**
@@ -201,6 +200,6 @@ class AcceptanceTester extends \Codeception\Actor
      */
     protected function prepareMessagePartRegex($part)
     {
-        return "/paypal.Messages\(\{[^}\)]*{$part}/";
+        return "/{$part}/";
     }
 }
