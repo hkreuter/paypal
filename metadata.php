@@ -100,7 +100,6 @@ $aModule = array(
         array('template' => 'page/details/inc/productmain.tpl',   'block'=>'details_productmain_price_value',       'file'=>'/views/blocks/page/details/inc/productmain.tpl'),
      ),
     'settings' => array(
-        array('group' => 'oepaypal_banners', 'name' => 'oePayPalClientId',                          'type' => 'str',    'value' => ''),
         array('group' => 'oepaypal_banners', 'name' => 'oePayPalBannersHideAll',                    'type' => 'bool',   'value' => 'false'),
         array('group' => 'oepaypal_banners', 'name' => 'oePayPalBannersStartPage',                  'type' => 'bool',   'value' => 'true'),
         array('group' => 'oepaypal_banners', 'name' => 'oePayPalBannersStartPageSelector',          'type' => 'str',    'value' => '#wrapper .row'),
@@ -138,6 +137,8 @@ $aModule = array(
         array('group' => 'oepaypal_api',         'name' => 'sOEPayPalUsername',               'type' => 'str',      'value' => ''),
         array('group' => 'oepaypal_api',         'name' => 'sOEPayPalPassword',               'type' => 'password', 'value' => ''),
         array('group' => 'oepaypal_api',         'name' => 'sOEPayPalSignature',              'type' => 'str',      'value' => ''),
+	    array('group' => 'oepaypal_api',         'name' => 'oePayPalClientId',                'type' => 'str',      'value' => ''),
+	    array('group' => 'oepaypal_api',         'name' => 'oePayPalSecret',                  'type' => 'str',      'value' => ''),
 
         array('group' => 'oepaypal_development', 'name' => 'blPayPalLoggerEnabled',           'type' => 'bool',     'value' => 'true'),
         array('group' => 'oepaypal_development', 'name' => 'blOEPayPalSandboxMode',           'type' => 'bool',     'value' => 'true'),

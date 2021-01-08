@@ -91,6 +91,7 @@ $aLang = array(
 
     'SHOP_MODULE_GROUP_oepaypal_banners'                     => 'Banner-Einstellungen | Bieten Sie Ihren Kunden PayPal Ratenzahlung mit 0% effektiven Jahreszins an. Erfahren Sie hier <a href="https://www.paypal.com/de/webapps/mpp/installments" target="_blank">mehr</a>.',
     'SHOP_MODULE_oePayPalClientId'                           => 'Client-ID',
+    'SHOP_MODULE_oePayPalSecret'                             => 'API Secret',
     'SHOP_MODULE_oePayPalBannersHideAll'                     => 'Ratenzahlung-Banner nicht anzeigen',
     'SHOP_MODULE_oePayPalBannersStartPage'                   => 'Ratenzahlung-Banner auf Startseite anzeigen',
     'SHOP_MODULE_oePayPalBannersStartPageSelector'           => 'CSS-Selektor der Startseite hinter dem das Banner angezeigt wird.',
