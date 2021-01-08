@@ -28,7 +28,8 @@
     },
     "autoload": {
         "psr-4": {
-            "OxidEsales\\PayPalModule\\": "../../../source/modules/oe/oepaypal"
+            "OxidEsales\\PayPalModule\\": "../../../source/modules/oe/oepaypal",
+            "OxidEsales\\HRPayPalModule\\": "./src"
         }
     }
 }

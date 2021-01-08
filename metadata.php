@@ -56,7 +56,8 @@ $aModule = array(
         \OxidEsales\Eshop\Application\Model\PaymentGateway::class             => \OxidEsales\PayPalModule\Model\PaymentGateway::class,
     ),
     'controllers' => array(
-        'oepaypalexpresscheckoutdispatcher' => \OxidEsales\PayPalModule\Controller\ExpressCheckoutDispatcher::class,
+        'oepaypalexpresscheckoutdispatcher' => \OxidEsales\HRPayPalModule\Controller\ExpressCheckoutController::class,
+        'oepaypalcallback'                  => \OxidEsales\HRPayPalModule\Controller\CallbackController::class,
         'oepaypalstandarddispatcher'        => \OxidEsales\PayPalModule\Controller\StandardDispatcher::class,
         'oepaypalipnhandler'                => \OxidEsales\PayPalModule\Controller\IPNHandler::class,
         'oepaypalorder_paypal'              => \OxidEsales\PayPalModule\Controller\Admin\OrderController::class
@@ -138,8 +139,8 @@ $aModule = array(
         array('group' => 'oepaypal_api',         'name' => 'sOEPayPalPassword',               'type' => 'password', 'value' => ''),
         array('group' => 'oepaypal_api',         'name' => 'sOEPayPalSignature',              'type' => 'str',      'value' => ''),
 
-        array('group' => 'oepaypal_development', 'name' => 'blPayPalLoggerEnabled',           'type' => 'bool',     'value' => 'false'),
-        array('group' => 'oepaypal_development', 'name' => 'blOEPayPalSandboxMode',           'type' => 'bool',     'value' => 'false'),
+        array('group' => 'oepaypal_development', 'name' => 'blPayPalLoggerEnabled',           'type' => 'bool',     'value' => 'true'),
+        array('group' => 'oepaypal_development', 'name' => 'blOEPayPalSandboxMode',           'type' => 'bool',     'value' => 'true'),
         array('group' => 'oepaypal_development', 'name' => 'sOEPayPalSandboxUserEmail',       'type' => 'str',      'value' => ''),
         array('group' => 'oepaypal_development', 'name' => 'sOEPayPalSandboxUsername',        'type' => 'str',      'value' => ''),
         array('group' => 'oepaypal_development', 'name' => 'sOEPayPalSandboxPassword',        'type' => 'password', 'value' => ''),
