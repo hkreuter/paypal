@@ -4,7 +4,7 @@
  * See LICENSE file for license details.
  */
 
-namespace OxidEsales\HRPayPalModule\Model;
+namespace OxidEsales\HRPayPalModule\Service;
 
 use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\HRPayPalModule\Exception\AuthenticationError;
