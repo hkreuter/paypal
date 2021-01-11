@@ -78,7 +78,9 @@ $aLang = array(
     'HELP_SHOP_MODULE_sOEPayPalSandboxUsername'              => 'Loggen Sie sich in Ihr <a target="_blank" href="https://www.sandbox.paypal.com/de/cgi-bin/webscr?cmd=_get-api-signature&generic-flow=true">PayPal-Konto</a> ein, um Ihre API-Signatur für die PayPal-Sandbox zu erhalten.',
     'SHOP_MODULE_sOEPayPalSandboxPassword'                   => 'Sandbox: API-Passwort',
     'SHOP_MODULE_sOEPayPalSandboxSignature'                  => 'Sandbox: Unterschrift',
-
+    'SHOP_MODULE_oePayPalSandboxClientId'                    => 'Sandbox: Client ID',
+    'SHOP_MODULE_oePayPalSandboxSecret'                      => 'Sandbox: API Secret',
+	
     'SHOP_MODULE_blPayPalLoggerEnabled'                      => 'PayPal Logging aktivieren',
 
     'SHOP_MODULE_blOEPayPalECheckoutInDetails'               => 'Express Checkout auf der Artikel-Detailseite anzeigen',

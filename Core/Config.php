@@ -104,6 +104,21 @@ class Config
      */
     protected $payPalApiUrl = 'https://api-3t.paypal.com/nvp';
 
+
+	/**
+	 * PayPal sandbox auth token endpoint
+	 *
+	 * @var string
+	 */
+    protected $payPalSandboxAuthTokenUrl = 'https://api-m.sandbox.paypal.com/v2/oauth2/token';
+
+	/**
+	 * PayPal auth token endpoint
+	 *
+	 * @var string
+	 */
+    protected $payPalAuthTokenUrl = 'https://api-m.paypal.com/v2/oauth2/token';
+
     /**
      * Maximum possible delivery costs value.
      *
@@ -199,6 +214,17 @@ class Config
         }
 
         return $url;
+    }
+
+    public function getPayPalAuthTokenUrl(): string
+    {
+	    if ($this->isSandboxEnabled()) {
+		    $url = $this->payPalSandboxAuthTokenUrl;
+	    } else {
+		    $url = $this->payPalAuthTokenUrl;
+	    }
+
+	    return $url;
     }
 
     /**
@@ -547,6 +573,38 @@ class Config
         // test sandbox signature
         return $this->getParameter('sOEPayPalSignature');
     }
+
+	/**
+	 * Returns PayPal Client Id
+	 *
+	 * @return string
+	 */
+	public function getClientId()
+	{
+		if ($this->isSandboxEnabled()) {
+			// sandbox signature
+			return $this->getParameter('oePayPalSandboxClientId');
+		}
+
+		// test sandbox signature
+		return $this->getParameter('oePayPalClientId');
+	}
+
+	/**
+	 * Returns PayPal API Secret
+	 *
+	 * @return string
+	 */
+	public function getSecret()
+	{
+		if ($this->isSandboxEnabled()) {
+			// sandbox signature
+			return $this->getParameter('oePayPalSandboxSecret');
+		}
+
+		// test sandbox signature
+		return $this->getParameter('oePayPalSecret');
+	}
 
     /**
      * Returns PayPal transaction mode

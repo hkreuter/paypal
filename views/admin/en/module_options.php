@@ -79,6 +79,8 @@ $aLang = array(
     'HELP_SHOP_MODULE_sOEPayPalSandboxUsername'              => 'Login to your <a target="_blank" href="https://www.sandbox.paypal.com/en/cgi-bin/webscr?cmd=_get-api-signature&generic-flow=true">PayPal Account</a> to get your API Signature for the PayPal Sandbox.',
     'SHOP_MODULE_sOEPayPalSandboxPassword'                   => 'Sandbox: API password',
     'SHOP_MODULE_sOEPayPalSandboxSignature'                  => 'Sandbox: Signature',
+    'SHOP_MODULE_oePayPalSandboxClientId'                    => 'Sandbox: Client ID',
+    'SHOP_MODULE_oePayPalSandboxSecret'                      => 'Sandbox: API Secret',
 
     'SHOP_MODULE_blPayPalLoggerEnabled'                      => 'Activate PayPal logging',
 
