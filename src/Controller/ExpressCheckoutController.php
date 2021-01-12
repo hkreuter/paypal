@@ -15,47 +15,36 @@ use OxidEsales\HRPayPalModule\Exception\PaymentNotValidForUserCountry;
 use OxidEsales\HRPayPalModule\Exception\ShippingMethodNotValid;
 use OxidEsales\HRPayPalModule\Exception\OrderTotalChanged;
 use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
+use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
+
 
 /**
  * PayPal Express Checkout Controller class
  */
 class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller\FrontendController
 {
-	/**
-	 * Default user action for checkout process
-	 *
-	 * @var string
-	 */
-	private $userAction = "continue";
-	
 	public function setExpressCheckout()
     {
         $session = EshopRegistry::getSession();
         $session->setVariable("oepaypal", "2");
 
         try {
-        	/** @var PayPalConfig $paypalConfig */
-	        $paypalConfig = oxNew(PayPalConfig::class);
+	        $container = ContainerFactory::getInstance()->getContainer();
 
 	        /** @var PaypalCheckout $checkoutModel */
-            $checkoutModel = oxNew(
-            	PaypalCheckout::class,
-	            oxNew(PayPalService::class),
-	            $paypalConfig,
-	            oxNew(PayPalTools::class, $paypalConfig),
-	            $this->getBaseUrl()
-            );
+	        $checkoutModel = $container->get(PaypalCheckout::class);
+
             $basket = EshopRegistry::getSession()->getBasket();
             $user = EshopRegistry::getSession()->getUser() ? EshopRegistry::getSession()->getUser() : null;
-	        $controllerKey = EshopRegistry::getControllerClassNameResolver()->getIdByClassName(get_class());
 
-	        $paypalToken = $checkoutModel->setExpressCheckout($basket, $user, $controllerKey);
+	        $requestId = EshopRegistry::getUtilsObject()->generateUId();
+	        $paypalToken = $checkoutModel->setExpressCheckout($basket, $user, $requestId);
 
 	        $session->setVariable("oepaypal-token", $paypalToken);
 	        EshopRegistry::getSession()->setVariable('paymentid', "oxidpaypal");
 	        EshopRegistry::getSession()->getBasket()->setPayment("oxidpaypal");
 
-	        $redirectUrl = $checkoutModel->getRedirectToPayPalUrl($paypalToken, $this->userAction);
+	        $redirectUrl = $checkoutModel->getRedirectToPayPalUrl($paypalToken);
 	        EshopRegistry::getUtils()->redirect($redirectUrl, false);
 
         } catch (EshopStandardException $exception) {
@@ -78,17 +67,10 @@ class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller
 	 */
 	public function getExpressCheckoutDetails()
 	{
-		/** @var PayPalConfig $paypalConfig */
-		$paypalConfig = oxNew(PayPalConfig::class);
+		$container = ContainerFactory::getInstance()->getContainer();
 
 		/** @var PaypalCheckout $checkoutModel */
-		$checkoutModel = oxNew(
-			PaypalCheckout::class,
-			oxNew(PayPalService::class),
-			$paypalConfig,
-			oxNew(PayPalTools::class, $paypalConfig),
-			$this->getBaseUrl()
-		);
+		$checkoutModel = $container->get(PaypalCheckout::class);
 
 		try {
 			$next = $checkoutModel->getExpressCheckoutDetails(EshopRegistry::getSession()->getBasket());

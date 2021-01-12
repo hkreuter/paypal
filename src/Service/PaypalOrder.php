@@ -9,7 +9,6 @@ declare(strict_types=1);
 namespace OxidEsales\HRPayPalModule\Service;
 
 use OxidEsales\HRPayPalModule\Query\Order as OrderQuery;
-use OxidEsales\PayPalModule\Core\Config as PaypalConfiguration;
 use OxidEsales\HRPayPalModule\Exception\RequestError;
 
 if (!defined('CURL_SSLVERSION_TLSV1_2')) {
@@ -42,11 +41,11 @@ class PaypalOrder
 
 	public function getUserToken(
 		string $requestId,
-	    float $total,
+	    string $formattedTotal,
 	    string $currencyCode
 	): string
 	{
-		$query = $this->orderQuery->getQuery($total, $currencyCode);
+		$query = $this->orderQuery->getQuery($formattedTotal, $currencyCode);
         $raw = $this->queryPayPal($requestId, $query);
         $result = $this->decodeResponse($raw);
 

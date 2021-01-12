@@ -8,54 +8,62 @@ declare(strict_types=1);
 
 namespace OxidEsales\HRPayPalModule\Model;
 
+use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 use OxidEsales\Eshop\Application\Model\Basket as EshopBasketModel;
 use OxidEsales\Eshop\Application\Model\User as EshopUserModel;
-use OxidEsales\Eshop\Core\Registry as EshopRegistry;
-use OxidEsales\PayPalModule\Model\PayPalRequest\SetExpressCheckoutRequestBuilder;
+
 use OxidEsales\PayPalModule\Model\PayPalRequest\GetExpressCheckoutDetailsRequestBuilder;
 use OxidEsales\PayPalModule\Model\PaymentValidator as PayPalPaymentValidator;
 use OxidEsales\PayPalModule\Core\Exception\PayPalException;
 use OxidEsales\PayPalModule\Core\PayPalService;
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
+
+use OxidEsales\HRPayPalModule\Service\PaypalConfiguration;
 use OxidEsales\HRPayPalModule\Exception\PaymentNotValidForUserCountry;
 use OxidEsales\HRPayPalModule\Exception\ShippingMethodNotValid;
 use OxidEsales\HRPayPalModule\Exception\OrderTotalChanged;
+use OxidEsales\HRPayPalModule\Service\PaypalOrder;
 use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
+
 use OxidEsales\PayPalModule\Model\Response\ResponseGetExpressCheckoutDetails;
 use OxidEsales\Eshop\Application\Model\Payment as EshopPaymentModel;
 use OxidEsales\Eshop\Application\Model\DeliverySetList as EshopDeliverySetListModel;
+
 use OxidEsales\HRPayPalModule\Model\Tools as PayPalTools;
+use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
+
 
 class PaypalCheckout
 {
-	/** @var PayPalService  */
-    private $paypalService;
 
-    /** @var PayPalConfig  */
-    private $paypalConfig;
+	/** @var PaypalOrder  */
+	private $paypalOrder;
 
-	/** @var  string */
-    private $baseUrl;
+	/** @var PaypalConfiguration  */
+    private $paypalConfiguration;
 
     /** @var PayPalTools */
     private $tools;
 
+	/** @var PaypalConfig */
+	private $paypalConfig;
+
 	public function __construct(
-		PayPalService $paypalService,
-		PayPalConfig $paypalConfig,
+		PaypalConfiguration $paypalConfiguration,
+		PaypalOrder $paypalOrder,
 		PayPalTools $tools,
-        string $baseUrl)
+		PayPalConfig $paypalConfig
+	)
 	{
-		$this->paypalService = $paypalService;
-		$this->paypalConfig = $paypalConfig;
-		$this->baseUrl = $baseUrl;
+		$this->paypalConfiguration = $paypalConfiguration;
+		$this->paypalOrder = $paypalOrder;
 		$this->tools = $tools;
+		$this->paypalConfig = $paypalConfig;
 	}
 
 	public function setExpressCheckout(
 		EshopBasketModel $basket,
 		EshopUserModel $user = null,
-		string $controllerKey
+	    string $requestId
 	): string
     {
 	    $basket = $this->prepareBasket($basket);
@@ -67,32 +75,15 @@ class PaypalCheckout
 		    throw $exception;
 	    }
 
-	    /** @var SetExpressCheckoutRequestBuilder $builder */
-	    $builder = oxNew(SetExpressCheckoutRequestBuilder::class);
-	    $builder->setPayPalConfig($this->paypalConfig);
-	    $builder->setBasket($basket);
-	    $builder->setUser($user);
-	    $builder->setReturnUrl($this->getReturnUrl($controllerKey));
-	    $builder->setCancelUrl($this->getCancelUrl($controllerKey));
+	    $formattedTotal = sprintf("%.2f", $basket->getPrice()->getBruttoPrice());
+	    $token = $this->paypalOrder->getUserToken($requestId, $formattedTotal, $basket->getBasketCurrency()->name);
 
-	    if (!$this->paypalConfig->isDeviceMobile()) {
-		    $builder->setCallBackUrl($this->getCallBackUrl($controllerKey));
-		    $builder->setMaxDeliveryAmount($this->paypalConfig->getMaxPayPalDeliveryAmount());
-	    }
-	    $showCartInPayPal = EshopRegistry::getRequest()->getRequestParameter("displayCartInPayPal");
-	    $showCartInPayPal = $showCartInPayPal && !$basket->isFractionQuantityItemsPresent();
-	    $builder->setShowCartInPayPal($showCartInPayPal);
-	    $builder->setTransactionMode($this->getTransactionMode($basket));
-
-	    $request = $builder->buildExpressCheckoutRequest();
-	    $result = $this->paypalService->setExpressCheckout($request);
-
-	    return $result->getToken();
+	    return $token;
     }
 
-    public function getRedirectToPayPalUrl(string $paypalToken, string $userAction = null): string
+    public function getRedirectToPayPalUrl(string $paypalToken): string
     {
-    	return $this->paypalConfig->getPayPalCommunicationUrl($paypalToken, $userAction);
+    	return $this->paypalConfiguration->getPayPalCheckoutNowUrl($paypalToken);
     }
 
 	/**

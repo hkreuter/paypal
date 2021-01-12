@@ -104,37 +104,7 @@ class Config
      *
      * @var string
      */
-    protected $payPalRestApiUrl = 'https://api-m.paypal.com/v2/checkout';
-
-
-	/**
-	 * PayPal sandbox API url.
-	 *
-	 * @var string
-	 */
-	protected $payPalSandboxRestApiUrl = 'https://api-m.sandbox.paypal.com/v2/checkout';
-
-	/**
-	 * PayPal API url.
-	 *
-	 * @var string
-	 */
-	protected $payPalApiUrl = 'https://api-3t.paypal.com/nvp';
-
-
-	/**
-	 * PayPal sandbox auth token endpoint
-	 *
-	 * @var string
-	 */
-    protected $payPalSandboxAuthTokenUrl = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
-
-	/**
-	 * PayPal auth token endpoint
-	 *
-	 * @var string
-	 */
-    protected $payPalAuthTokenUrl = 'https://api-m.paypal.com/v1/oauth2/token';
+    protected $payPalApiUrl = 'https://api-3t.paypal.com/nvp';
 
     /**
      * Maximum possible delivery costs value.
@@ -231,26 +201,6 @@ class Config
         }
 
         return $url;
-    }
-
-	public function getPayPalRestApiUrl(): string
-	{
-		if ($this->isSandboxEnabled()) {
-			return $this->payPalSandboxRestApiUrl;
-		} else {
-			return $this->payPalRestApiUrl;
-		}
-	}
-
-    public function getPayPalAuthTokenUrl(): string
-    {
-	    if ($this->isSandboxEnabled()) {
-		    $url = $this->payPalSandboxAuthTokenUrl;
-	    } else {
-		    $url = $this->payPalAuthTokenUrl;
-	    }
-
-	    return $url;
     }
 
     /**
@@ -615,63 +565,7 @@ class Config
 		// test sandbox signature
 		return $this->getParameter('oePayPalClientId');
 	}
-
-	/**
-	 * Returns PayPal API Secret
-	 *
-	 * @return string
-	 */
-	public function getSecret()
-	{
-		if ($this->isSandboxEnabled()) {
-			// sandbox signature
-			return $this->getParameter('oePayPalSandboxSecret');
-		}
-
-		// test sandbox signature
-		return $this->getParameter('oePayPalSecret');
-	}
-
-	public function getSavedJWTAuthToken(): string
-	{
-		if ($this->isSandboxEnabled()) {
-			return (string) EshopRegistry::getConfig()->getConfigParam('oePayPalSandboxJWTAuthToken');
-		} else {
-			return (string) EshopRegistry::getConfig()->getConfigParam('oePayPalJWTAuthToken');
-		}
-	}
-
-	public function saveJWTAuthToken(string $token): void
-	{
-		if ($this->isSandboxEnabled()) {
-			EshopRegistry::getConfig()->setConfigParam('oePayPalSandboxJWTAuthToken', $token);
-			EshopRegistry::getConfig()->saveShopConfVar('str', 'oePayPalSandboxJWTAuthToken', $token);
-		} else {
-			EshopRegistry::getConfig()->setConfigParam('oePayPalJWTAuthToken', $token);
-			EshopRegistry::getConfig()->saveShopConfVar('str', 'oePayPalJWTAuthToken', $token);
-		}
-	}
-
-	public function getJWTAuthTokenValidUntil(): int
-	{
-		if ($this->isSandboxEnabled()) {
-			return (int) EshopRegistry::getConfig()->getConfigParam('oePayPalSandboxJWTAuthTokenValidUntil');
-		} else {
-			return (int) EshopRegistry::getConfig()->getConfigParam('oePayPalJWTAuthTokenValidUntil');
-		}
-	}
-
-	public function saveJWTAuthTokenValidUntil(int $timestamp): void
-	{
-		if ($this->isSandboxEnabled()) {
-			EshopRegistry::getConfig()->setConfigParam( 'oePayPalSandboxJWTAuthTokenValidUntil', $timestamp );
-			EshopRegistry::getConfig()->saveShopConfVar( 'str', 'oePayPalSandboxJWTAuthTokenValidUntil', (string) $timestamp );
-		} else {
-			EshopRegistry::getConfig()->setConfigParam('oePayPalJWTAuthTokenValidUntil', $timestamp);
-			EshopRegistry::getConfig()->saveShopConfVar('str', 'oePayPalJWTAuthTokenValidUntil', (string) $timestamp);
-		}
-	}
-
+	
     /**
      * Returns PayPal transaction mode
      *

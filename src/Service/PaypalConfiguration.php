@@ -57,35 +57,23 @@ class PaypalConfiguration
 		return $url;
 	}
 
-	/**
-	 * Returns PayPal Client Id
-	 *
-	 * @return string
-	 */
-	public function getClientId()
+
+	public function getClientId(): string
 	{
 		if ($this->isSandboxEnabled()) {
-			// sandbox signature
 			return EshopRegistry::getConfig()->getConfigParam('oePayPalSandboxClientId');
 		}
 
-		// test sandbox signature
 		return EshopRegistry::getConfig()->getConfigParam('oePayPalClientId');
 	}
 
-	/**
-	 * Returns PayPal API Secret
-	 *
-	 * @return string
-	 */
-	public function getSecret()
+
+	public function getSecret(): string
 	{
 		if ($this->isSandboxEnabled()) {
-			// sandbox signature
 			return EshopRegistry::getConfig()->getConfigParam('oePayPalSandboxSecret');
 		}
 
-		// test sandbox signature
 		return EshopRegistry::getConfig()->getConfigParam('oePayPalSecret');
 	}
 

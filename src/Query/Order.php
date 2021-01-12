@@ -20,25 +20,25 @@ class Order
 		$this->applicationContext = $applicationContext;
 	}
 
-	public function getQuery(float $value, string $currencyCode) :string
+	public function getQuery(string $formattedTotal, string $currencyCode) :string
 	{
 		$query = array_merge(
 		         $this->getIntent(),
-		         $this->getPurchaseUnits($value, $currencyCode),
+		         $this->getPurchaseUnits($formattedTotal, $currencyCode),
 		         $this->getApplicationContext()
 		);
 
 		return json_encode($query);
 	}
 
-	private function getPurchaseUnits(float $amount, string $currencyCode): array
+	private function getPurchaseUnits(string $formattedTotal, string $currencyCode): array
 	{
 		$purchaseUnits = [
 			'purchase_units' => [
 				[
 					'amount' => [
 						'currency_code' => $currencyCode,
-						'value' => $amount
+						'value'         => $formattedTotal
 					]
 				]
 			]

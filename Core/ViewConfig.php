@@ -273,7 +273,7 @@ class ViewConfig extends ViewConfig_parent
      */
     public function getPayPalClientId(): string
     {
-        return Registry::getConfig()->getConfigParam('oePayPalClientId');
+        return $this->getPayPalConfig()->getClientId();
     }
 
     /**
