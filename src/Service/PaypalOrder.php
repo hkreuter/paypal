@@ -28,13 +28,18 @@ class PaypalOrder
 	/** @var string  */
 	private $purchaseUnits = '';
 
+	/** @var ApplicationContext  */
+	private $applicationContext = '';
+
 	public function __construct(
 		PaypalBearerAuthentication $paypalBearer,
-     	PaypalConfiguration $paypalConfiguration
+     	PaypalConfiguration $paypalConfiguration,
+	    ApplicationContext $applicationContext
 	)
 	{
 		$this->paypalBearer = $paypalBearer;
 		$this->paypalConfiguration = $paypalConfiguration;
+		$this->applicationContext = $applicationContext;
 	}
 
 	public function getUserToken(string $requestId): string
@@ -51,14 +56,40 @@ class PaypalOrder
 
 	public function setAmount(float $value, string $currencyCode): void
 	{
-		$this->purchaseUnits =  '"purchase_units": [
+		$this->purchaseUnits =  '
+		    "purchase_units": [
 		        {
 			        "amount": {
-			        "currency_code": "' . $currencyCode . '",
-                       "value": "' . $value . '"
-                   }
+			            "currency_code": "' . $currencyCode . '",
+                        "value": "' . $value . '"
+                    }
                 }
-		     ]';
+		    ]';
+	}
+
+	private function getApplicationContext()
+	{
+		$applicationContext = [
+			'return_url'          => $this->applicationContext->getReturnUrl('oepaypalexpresscheckoutdispatcher'),
+			'cancel_url'          => $this->applicationContext->getCancelUrl('oepaypalexpresscheckoutdispatcher'),
+			'locale'              => $this->applicationContext->getLocaleCode(),
+			'landing_page'        => $this->applicationContext->getPayPalLandingPage(),
+			'shipping_preference' => $this->applicationContext->getPayPalShippingPreference(),
+			'user_action'         => $this->applicationContext->getPayPalUserAction()
+		];
+
+		return json_encode(['application_context' => $applicationContext]);
+	}
+
+	private function getQuery()
+	{
+		$query = '{' .
+		     $this->getIntent() . ',' .
+		     $this->purchaseUnits . ', ' .
+		     $this->getApplicationContext() .
+		'}';
+
+		return $query;
 	}
 
 	private function decodeResponse(string $raw): array
@@ -71,21 +102,11 @@ class PaypalOrder
 		return $json;
 	}
 
-	private function getQuery()
-	{
-		$query = '{
-		     "intent": "' . $this->getIntent() . '", ' .
-		     $this->purchaseUnits .
-		'}';
-
-		#TODO: "application_context"
-		
-		return $query;
-	}
-
 	private function getIntent(): string
 	{
-		return ('Sale' == $this->paypalConfiguration->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE";
+		$intent = ('Sale' == $this->paypalConfiguration->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE";
+
+		return '"intent": "' . $intent . '"';
 	}
 
 	private function getHeaders(string $requestId): array
