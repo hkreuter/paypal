@@ -6,18 +6,21 @@
 
 require_once dirname(__FILE__) . "/../../../../bootstrap.php";
 
-use OxidEsales\HRPayPalModule\Service\PayPalBearerAuthentication;
-use OxidEsales\HRPayPalModule\Service\PayPalOrder;
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
+use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
+use OxidEsales\HRPayPalModule\Service\PaypalOrder;
+use OxidEsales\HRPayPalModule\Service\PaypalConfiguration;
 
 try {
-	$paypalConfig = oxNew(PayPalConfig::class);
-	$auth = new PayPalBearerAuthentication($paypalConfig);
-    $caller = new PayPalOrder($auth, $paypalConfig);
-    $caller->setAmount(100, 'EUR');
-    $result = $caller->getUserToken('some_request_id');
-	#$result = $auth->getToken();
-	var_export($result);
+	$container = ContainerFactory::getInstance()->getContainer();
+	$caller = $container->get(PaypalOrder::class);
+	$caller->setAmount(100, 'EUR');
+    $userToken = $caller->getUserToken('some_request_id');
+
+    /** @var PaypalConfiguration $configuration */
+    $configuration = $container->get(PaypalConfiguration::class);
+	$redirectUrl = $configuration->getPayPalCheckoutNowUrl($userToken);
+
+	var_dump($redirectUrl);
 } catch ( \Exception $exception) {
 	var_export($exception->getMessage());
 }

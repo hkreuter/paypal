@@ -1,0 +1,10 @@
+services:
+
+  _defaults:
+    public: false
+    autowire: true
+
+  OxidEsales\HRPayPalModule\:
+      resource: 'src/*'
+      exclude: 'src/**/{Model,Exception,Shop}'
+      public: true

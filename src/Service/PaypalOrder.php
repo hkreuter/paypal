@@ -4,9 +4,11 @@
  * See LICENSE file for license details.
  */
 
+declare(strict_types=1);
+
 namespace OxidEsales\HRPayPalModule\Service;
 
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
+use OxidEsales\PayPalModule\Core\Config as PaypalConfiguration;
 use OxidEsales\HRPayPalModule\Exception\RequestError;
 
 if (!defined('CURL_SSLVERSION_TLSV1_2')) {
@@ -20,19 +22,19 @@ class PaypalOrder
 	/** @var PaypalBearerAuthentication  */
 	private $paypalBearer;
 
-	/** @var PayPalConfig  */
-	private $paypalConfig;
+	/** @var PaypalConfiguration  */
+	private $paypalConfiguration;
 
 	/** @var string  */
 	private $purchaseUnits = '';
 
 	public function __construct(
 		PaypalBearerAuthentication $paypalBearer,
-     	PayPalConfig $paypalConfig
+     	PaypalConfiguration $paypalConfiguration
 	)
 	{
 		$this->paypalBearer = $paypalBearer;
-		$this->paypalConfig = $paypalConfig;
+		$this->paypalConfiguration = $paypalConfiguration;
 	}
 
 	public function getUserToken(string $requestId): string
@@ -83,7 +85,7 @@ class PaypalOrder
 
 	private function getIntent(): string
 	{
-		return ('Sale' == $this->paypalConfig->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE";
+		return ('Sale' == $this->paypalConfiguration->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE";
 	}
 
 	private function getHeaders(string $requestId): array
@@ -103,7 +105,7 @@ class PaypalOrder
 	private function queryPayPal(string $requestId): string
 	{
 		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->paypalConfig->getPayPalRestApiUrl() . self::API_ROUTE);
+		curl_setopt($ch, CURLOPT_URL, $this->paypalConfiguration->getPayPalRestApiUrl() . self::API_ROUTE);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $this->getHeaders($requestId));
 
 		curl_setopt($ch, CURLOPT_POST, 1);

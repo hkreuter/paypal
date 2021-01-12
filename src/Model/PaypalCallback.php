@@ -4,6 +4,8 @@
  * See LICENSE file for license details.
  */
 
+declare(strict_types=1);
+
 namespace OxidEsales\HRPayPalModule\Model;
 
 use OxidEsales\Eshop\Application\Model\Basket as EshopBasketModel;

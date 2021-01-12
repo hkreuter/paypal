@@ -4,9 +4,10 @@
  * See LICENSE file for license details.
  */
 
+declare(strict_types=1);
+
 namespace OxidEsales\HRPayPalModule\Service;
 
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\HRPayPalModule\Exception\AuthenticationError;
 
 if (!defined('CURL_SSLVERSION_TLSV1_2')) {
@@ -15,12 +16,12 @@ if (!defined('CURL_SSLVERSION_TLSV1_2')) {
 
 class PaypalBearerAuthentication
 {
-	/** @var PayPalConfig  */
-	private $paypalConfig;
+	/** @var PaypalConfiguration  */
+	private $paypalConfiguration;
 
-	public function __construct(PayPalConfig $paypalConfig)
+	public function __construct(PaypalConfiguration $paypalConfiguration)
 	{
-		$this->paypalConfig = $paypalConfig;
+		$this->paypalConfiguration = $paypalConfiguration;
 	}
 
 	public function getToken(): string
@@ -33,13 +34,13 @@ class PaypalBearerAuthentication
 	        throw AuthenticationError::byMissingToken();
         }
 
-        return $this->paypalConfig->getSavedJWTAuthToken();
+        return $this->paypalConfiguration->getSavedJWTAuthToken();
 	}
 
 	private function isValidToken(): bool
 	{
-		return ($this->paypalConfig->getSavedJWTAuthToken()
-		    && (time() < $this->paypalConfig->getJWTAuthTokenValidUntil()));
+		return ($this->paypalConfiguration->getSavedJWTAuthToken()
+		    && (time() < $this->paypalConfiguration->getJWTAuthTokenValidUntil()));
 	}
 
 	private function fetchNewToken(): void
@@ -52,8 +53,8 @@ class PaypalBearerAuthentication
             array_key_exists('token_type', $decodedResponse) &&
             ('bearer' === strtolower($decodedResponse['token_type']))
         ) {
-            $this->paypalConfig->saveJWTAuthToken(trim($decodedResponse['access_token']));
-            $this->paypalConfig->saveJWTAuthTokenValidUntil(time() + (int) $decodedResponse['expires_in']);
+            $this->paypalConfiguration->saveJWTAuthToken(trim($decodedResponse['access_token']));
+            $this->paypalConfiguration->saveJWTAuthTokenValidUntil(time() + (int) $decodedResponse['expires_in']);
         } else {
         	throw AuthenticationError::byResult($response);
         }
@@ -72,9 +73,9 @@ class PaypalBearerAuthentication
 	private function queryPayPal(): string
 	{
 		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->paypalConfig->getPayPalAuthTokenUrl());
+		curl_setopt($ch, CURLOPT_URL, $this->paypalConfiguration->getPayPalAuthTokenUrl());
 		curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json', 'Accept-Language: en_US']);
-		curl_setopt($ch, CURLOPT_USERPWD, $this->paypalConfig->getClientId() . ':' . $this->paypalConfig->getSecret());
+		curl_setopt($ch, CURLOPT_USERPWD, $this->paypalConfiguration->getClientId() . ':' . $this->paypalConfiguration->getSecret());
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, 'grant_type=client_credentials');
 		curl_setopt($ch, CURLOPT_VERBOSE, 0);
