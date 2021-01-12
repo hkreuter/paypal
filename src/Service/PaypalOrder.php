@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace OxidEsales\HRPayPalModule\Service;
 
+use OxidEsales\HRPayPalModule\Query\Order as OrderQuery;
 use OxidEsales\PayPalModule\Core\Config as PaypalConfiguration;
 use OxidEsales\HRPayPalModule\Exception\RequestError;
 
@@ -25,26 +26,28 @@ class PaypalOrder
 	/** @var PaypalConfiguration  */
 	private $paypalConfiguration;
 
-	/** @var string  */
-	private $purchaseUnits = '';
-
-	/** @var ApplicationContext  */
-	private $applicationContext = '';
+	/** @var OrderQuery  */
+	private $orderQuery = '';
 
 	public function __construct(
 		PaypalBearerAuthentication $paypalBearer,
      	PaypalConfiguration $paypalConfiguration,
-	    ApplicationContext $applicationContext
+		OrderQuery $orderQuery
 	)
 	{
 		$this->paypalBearer = $paypalBearer;
 		$this->paypalConfiguration = $paypalConfiguration;
-		$this->applicationContext = $applicationContext;
+		$this->orderQuery = $orderQuery;
 	}
 
-	public function getUserToken(string $requestId): string
+	public function getUserToken(
+		string $requestId,
+	    float $total,
+	    string $currencyCode
+	): string
 	{
-        $raw = $this->queryPayPal($requestId);
+		$query = $this->orderQuery->getQuery($total, $currencyCode);
+        $raw = $this->queryPayPal($requestId, $query);
         $result = $this->decodeResponse($raw);
 
         if (!array_key_exists('id', $result)) {
@@ -52,44 +55,6 @@ class PaypalOrder
         }
 
         return $result['id'];
-	}
-
-	public function setAmount(float $value, string $currencyCode): void
-	{
-		$this->purchaseUnits =  '
-		    "purchase_units": [
-		        {
-			        "amount": {
-			            "currency_code": "' . $currencyCode . '",
-                        "value": "' . $value . '"
-                    }
-                }
-		    ]';
-	}
-
-	private function getApplicationContext()
-	{
-		$applicationContext = [
-			'return_url'          => $this->applicationContext->getReturnUrl('oepaypalexpresscheckoutdispatcher'),
-			'cancel_url'          => $this->applicationContext->getCancelUrl('oepaypalexpresscheckoutdispatcher'),
-			'locale'              => $this->applicationContext->getLocaleCode(),
-			'landing_page'        => $this->applicationContext->getPayPalLandingPage(),
-			'shipping_preference' => $this->applicationContext->getPayPalShippingPreference(),
-			'user_action'         => $this->applicationContext->getPayPalUserAction()
-		];
-
-		return json_encode(['application_context' => $applicationContext]);
-	}
-
-	private function getQuery()
-	{
-		$query = '{' .
-		     $this->getIntent() . ',' .
-		     $this->purchaseUnits . ', ' .
-		     $this->getApplicationContext() .
-		'}';
-
-		return $query;
 	}
 
 	private function decodeResponse(string $raw): array
@@ -100,13 +65,6 @@ class PaypalOrder
 		}
 
 		return $json;
-	}
-
-	private function getIntent(): string
-	{
-		$intent = ('Sale' == $this->paypalConfiguration->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE";
-
-		return '"intent": "' . $intent . '"';
 	}
 
 	private function getHeaders(string $requestId): array
@@ -123,7 +81,7 @@ class PaypalOrder
 		return $headers;
 	}
 
-	private function queryPayPal(string $requestId): string
+	private function queryPayPal(string $requestId, string $query): string
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $this->paypalConfiguration->getPayPalRestApiUrl() . self::API_ROUTE);
@@ -137,7 +95,7 @@ class PaypalOrder
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->getQuery());
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
 
 		$response = curl_exec($ch);
 		$curlError = curl_errno($ch);

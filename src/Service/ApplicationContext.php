@@ -12,6 +12,11 @@ use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 
 class ApplicationContext
 {
+	public function getTransactionMode()
+	{
+		return EshopRegistry::getConfig()->getConfigParam('sOEPayPalTransactionMode');
+	}
+
 	public function getReturnUrl(string $controllerKey): string
 	{
 		return EshopRegistry::getSession()->processUrl(
@@ -40,7 +45,7 @@ class ApplicationContext
 
 	public function getLocaleCode(): string
 	{
-		return EshopRegistry::getLang()->translateString("OEPAYPAL_LOCALE");
+		return str_replace('_', '-', EshopRegistry::getLang()->translateString("OEPAYPAL_LOCALE"));
 	}
 
 	public function getPayPalLandingPage(): string
@@ -57,8 +62,7 @@ class ApplicationContext
 	{
 		return 'NO_SHIPPING';
 	}
-
-
+	
 	private function getBaseUrl(): string
 	{
 		$url = EshopRegistry::getConfig()->getSslShopUrl() . "index.php?lang=" .

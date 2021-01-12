@@ -9,12 +9,13 @@ require_once dirname(__FILE__) . "/../../../../bootstrap.php";
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\HRPayPalModule\Service\PaypalOrder;
 use OxidEsales\HRPayPalModule\Service\PaypalConfiguration;
+use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 
 try {
 	$container = ContainerFactory::getInstance()->getContainer();
 	$caller = $container->get(PaypalOrder::class);
-	$caller->setAmount(100, 'EUR');
-    $userToken = $caller->getUserToken('some_request_id');
+	$requestId = EshopRegistry::getUtilsObject()->generateUId();
+    $userToken = $caller->getUserToken($requestId, 100, 'EUR');
 
     /** @var PaypalConfiguration $configuration */
     $configuration = $container->get(PaypalConfiguration::class);
