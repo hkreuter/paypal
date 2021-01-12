@@ -21,8 +21,14 @@ use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
  */
 class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller\FrontendController
 {
-
-    public function setExpressCheckout()
+	/**
+	 * Default user action for checkout process
+	 *
+	 * @var string
+	 */
+	private $userAction = "continue";
+	
+	public function setExpressCheckout()
     {
         $session = EshopRegistry::getSession();
         $session->setVariable("oepaypal", "2");
