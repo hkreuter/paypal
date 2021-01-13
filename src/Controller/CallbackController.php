@@ -20,7 +20,7 @@ class CallbackController extends \OxidEsales\Eshop\Application\Controller\Fronte
 	public function processCallBack(): void {
 
 		$paypalLogger = oxNew(PayPalLogger::class );
-		$paypalLogger->setLoggerSessionId( EshopRegistry::getSession()->getId() );
+		$paypalLogger->setLoggerSessionId(EshopRegistry::getSession()->getId());
 		$paypalConfig = oxNew(PayPalConfig::class);
 
 		/** @var PaypalCallback $callbackModel */
