@@ -14,7 +14,7 @@ use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 use OxidEsales\PayPalModule\Core\PayPalService;
 use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\PayPalModule\Core\Logger as PayPalLogger;
-use OxidEsales\HRPayPalModule\Model\Tools as PayPalTools;
+use OxidEsales\HRPayPalModule\Service\Tools as PayPalTools;
 
 class PaypalCallback
 {

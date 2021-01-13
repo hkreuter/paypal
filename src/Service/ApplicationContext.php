@@ -27,12 +27,13 @@ class ApplicationContext
 	public function getCancelUrl(string $controllerKey): string
 	{
 		$cancelURLFromRequest = EshopRegistry::getRequest()->getRequestParameter('oePayPalCancelURL');
-		$cancelUrl = EshopRegistry::getSession()->processUrl($this->getBaseUrl() . "&cl=basket");
 
 		if ($cancelURLFromRequest) {
 			$cancelUrl = html_entity_decode(urldecode($cancelURLFromRequest));
 		} elseif ($requestedControllerKey = $this->getRequestedControllerKey()) {
 			$cancelUrl = EshopRegistry::getSession()->processUrl($this->getBaseUrl() . '&cl=' . $requestedControllerKey);
+		} else {
+			$cancelUrl = EshopRegistry::getSession()->processUrl($this->getBaseUrl() . '&cl=' . $controllerKey);
 		}
 
 		return $cancelUrl;
@@ -58,11 +59,16 @@ class ApplicationContext
 		return 'CONTINUE';
 	}
 
-	public function getPayPalShippingPreference(): string
+	public function getPayPalExpressShippingPreference(): string
 	{
-		return 'NO_SHIPPING';
+		return 'GET_FROM_FILE';
 	}
-	
+
+	public function getPayPalStandardShippingPreference(): string
+	{
+		return 'SET_PROVIDED_ADDRESS';
+	}
+
 	private function getBaseUrl(): string
 	{
 		$url = EshopRegistry::getConfig()->getSslShopUrl() . "index.php?lang=" .

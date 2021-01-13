@@ -6,10 +6,11 @@
 
 declare(strict_types=1);
 
-namespace OxidEsales\HRPayPalModule\Model;
+namespace OxidEsales\HRPayPalModule\Service;
 
 use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\Eshop\Application\Model\User as EshopUserModel;
+use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 
 class Tools
 {
@@ -19,6 +20,18 @@ class Tools
 	public function __construct(PayPalConfig $paypalConfig)
 	{
 		$this->paypalConfig = $paypalConfig;
+	}
+
+	public function toSession(array $data): void
+	{
+		foreach ($data as $key  => $value) {
+			EshopRegistry::getSession()->setVariable($key, $value);
+		}
+	}
+
+	public function getPersistentValue(string $name): ?mixed
+	{
+		return EshopRegistry::getSession()->getVariable($name);
 	}
 
 	public function makeUniqueNames(array $deliverySetList): array

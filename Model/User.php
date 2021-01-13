@@ -56,6 +56,11 @@ class User extends User_parent
         return false;
     }
 
+    public function ensureAutoGroups($countryId)
+    {
+	    $this->_setAutoGroups($countryId);
+    }
+
     /**
      * Check if the shop user is the same as PayPal user.
      * Fields: first name, last name, street, street nr, city - must be equal.

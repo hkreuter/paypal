@@ -7,16 +7,12 @@
 namespace OxidEsales\HRPayPalModule\Controller;
 
 use OxidEsales\Eshop\Core\Registry as EshopRegistry;
-use OxidEsales\PayPalModule\Core\PayPalService;
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
-use OxidEsales\HRPayPalModule\Model\Tools as PayPalTools;
 use OxidEsales\HRPayPalModule\Model\PaypalCheckout;
 use OxidEsales\HRPayPalModule\Exception\PaymentNotValidForUserCountry;
 use OxidEsales\HRPayPalModule\Exception\ShippingMethodNotValid;
 use OxidEsales\HRPayPalModule\Exception\OrderTotalChanged;
 use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
-
 
 /**
  * PayPal Express Checkout Controller class
@@ -35,14 +31,14 @@ class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller
 	        $checkoutModel = $container->get(PaypalCheckout::class);
 
             $basket = EshopRegistry::getSession()->getBasket();
+	        $basket->setPayment("oxidpaypal");
             $user = EshopRegistry::getSession()->getUser() ? EshopRegistry::getSession()->getUser() : null;
 
 	        $requestId = EshopRegistry::getUtilsObject()->generateUId();
 	        $paypalToken = $checkoutModel->setExpressCheckout($basket, $user, $requestId);
 
-	        $session->setVariable("oepaypal-token", $paypalToken);
-	        EshopRegistry::getSession()->setVariable('paymentid', "oxidpaypal");
-	        EshopRegistry::getSession()->getBasket()->setPayment("oxidpaypal");
+	        EshopRegistry::getSession()->setVariable('oepaypal-token', $paypalToken);
+	        EshopRegistry::getSession()->setVariable('paymentid', 'oxidpaypal');
 
 	        $redirectUrl = $checkoutModel->getRedirectToPayPalUrl($paypalToken);
 	        EshopRegistry::getUtils()->redirect($redirectUrl, false);
@@ -73,13 +69,17 @@ class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller
 		$checkoutModel = $container->get(PaypalCheckout::class);
 
 		try {
-			$next = $checkoutModel->getExpressCheckoutDetails(EshopRegistry::getSession()->getBasket());
+			$basket = EshopRegistry::getSession()->getBasket();
+
+			// Remove flag of "new item added" to not show "Item added" popup when returning to checkout from paypal
+			$basket->isNewItemAdded();
+
+			$userToken = EshopRegistry::getSession()->getVariable('oepaypal-token');
+			$next = $checkoutModel->processExpressCheckoutDetails($basket, $userToken);
 
 		} catch (PaymentNotValidForUserCountry $exception) {
 			EshopRegistry::getUtilsView()->addErrorToDisplay( 'MESSAGE_PAYMENT_SELECT_ANOTHER_PAYMENT' );
-			$logger = $this->getLogger();
-			$logger->log( "Shop error: PayPal payment validation by user country failed. Payment is not valid for this country." );
-
+			
 			$next = "payment";
 		} catch(ShippingMethodNotValid $exception) {
 			EshopRegistry::getUtilsView()->addErrorToDisplay( "OEPAYPAL_SELECT_ANOTHER_SHIPMENT" );

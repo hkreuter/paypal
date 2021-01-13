@@ -8,35 +8,35 @@ declare(strict_types=1);
 
 namespace OxidEsales\HRPayPalModule\Model;
 
+use stdClass;
 use OxidEsales\Eshop\Core\Registry as EshopRegistry;
 use OxidEsales\Eshop\Application\Model\Basket as EshopBasketModel;
 use OxidEsales\Eshop\Application\Model\User as EshopUserModel;
-
-use OxidEsales\PayPalModule\Model\PayPalRequest\GetExpressCheckoutDetailsRequestBuilder;
+use OxidEsales\Eshop\Application\Model\Payment as EshopPaymentModel;
+use OxidEsales\Eshop\Application\Model\DeliverySetList as EshopDeliverySetListModel;
+use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
+use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
+use OxidEsales\PayPalModule\Model\OutOfStockValidator as PayPalOutOfStockValidator;
 use OxidEsales\PayPalModule\Model\PaymentValidator as PayPalPaymentValidator;
 use OxidEsales\PayPalModule\Core\Exception\PayPalException;
-use OxidEsales\PayPalModule\Core\PayPalService;
-
+use OxidEsales\HRPayPalModule\Core\PaypalExpressUser;
+use OxidEsales\HRPayPalModule\Core\PaypalExpressAddress;
+use OxidEsales\HRPayPalModule\Service\Tools as PayPalTools;
 use OxidEsales\HRPayPalModule\Service\PaypalConfiguration;
+use OxidEsales\HRPayPalModule\Service\PaypalOrder;
+use OxidEsales\HRPayPalModule\Service\PaypalOrderDetails;
 use OxidEsales\HRPayPalModule\Exception\PaymentNotValidForUserCountry;
 use OxidEsales\HRPayPalModule\Exception\ShippingMethodNotValid;
 use OxidEsales\HRPayPalModule\Exception\OrderTotalChanged;
-use OxidEsales\HRPayPalModule\Service\PaypalOrder;
-use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
-
-use OxidEsales\PayPalModule\Model\Response\ResponseGetExpressCheckoutDetails;
-use OxidEsales\Eshop\Application\Model\Payment as EshopPaymentModel;
-use OxidEsales\Eshop\Application\Model\DeliverySetList as EshopDeliverySetListModel;
-
-use OxidEsales\HRPayPalModule\Model\Tools as PayPalTools;
-use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
-
+use OxidEsales\HRPayPalModule\Exception\OrderError;
 
 class PaypalCheckout
 {
-
 	/** @var PaypalOrder  */
 	private $paypalOrder;
+
+	/** @var PaypalOrderDetails  */
+	private $paypalOrderDetails;
 
 	/** @var PaypalConfiguration  */
     private $paypalConfiguration;
@@ -50,12 +50,14 @@ class PaypalCheckout
 	public function __construct(
 		PaypalConfiguration $paypalConfiguration,
 		PaypalOrder $paypalOrder,
+		PaypalOrderDetails $paypalOrderDetails,
 		PayPalTools $tools,
 		PayPalConfig $paypalConfig
 	)
 	{
 		$this->paypalConfiguration = $paypalConfiguration;
 		$this->paypalOrder = $paypalOrder;
+		$this->paypalOrderDetails = $paypalOrderDetails;
 		$this->tools = $tools;
 		$this->paypalConfig = $paypalConfig;
 	}
@@ -76,7 +78,13 @@ class PaypalCheckout
 	    }
 
 	    $formattedTotal = sprintf("%.2f", $basket->getPrice()->getBruttoPrice());
-	    $token = $this->paypalOrder->getUserToken($requestId, $formattedTotal, $basket->getBasketCurrency()->name);
+	    $token = $this->paypalOrder->getUserToken(
+	    	$requestId,
+		    $formattedTotal,
+		    $basket->getBasketCurrency()->name,
+		    $this->getTransactionMode($basket)
+	    );
+	    \OxidEsales\Eshop\Core\Registry::getLogger()->error($token);
 
 	    return $token;
     }
@@ -93,25 +101,30 @@ class PaypalCheckout
      *
      * @return string
      */
-    public function getExpressCheckoutDetails(EshopBasketModel $basket): string
+    public function processExpressCheckoutDetails(EshopBasketModel $basket, string $userToken): string
     {
-        $payPalService = $this->paypalService;
-        $builder = oxNew(GetExpressCheckoutDetailsRequestBuilder::class);
-        $builder->setSession(EshopRegistry::getSession());
-        $request = $builder->buildRequest();
-        $details = $payPalService->getExpressCheckoutDetails($request);
+	    $details = $this->paypalOrderDetails->getOrderDetails($userToken);
 
-        // Remove flag of "new item added" to not show "Item added" popup when returning to checkout from paypal
-        $basket->isNewItemAdded();
+	    $this->validateExpressCheckoutDetails($details);
 
-        // creating new or using session user
-        $user = $this->initializeUserData($details);
+	    /** @var PaypalExpressAddress $paypalExpressAddress */
+	    $paypalExpressAddress = new PaypalExpressAddress($details);
 
-        if (!$this->isPaymentValidForUserCountry($user)) {
+        /** @var PaypalExpressUser $userHandler */
+        $userHandler = new PaypalExpressUser($details->payer, $paypalExpressAddress);
+	    $sessionUser = EshopRegistry::getSession()->getUser();
+	    $sessionUser = $sessionUser ?: null;
+	    $user = $userHandler->getUser($sessionUser);
+
+	    EshopRegistry::getSession()->setVariable('usr', $user->getId());
+
+	    if (!$this->isPaymentValidForUserCountry($user)) {
             throw new PaymentNotValidForUserCountry();
         }
 
-        $shippingId = $this->extractShippingId(urldecode($details->getShippingOptionName()), $user);
+        //TODO: is there any way to chose the shipping on PP side in the PP rest api?
+	    $shippingId = 'oxidstandard';
+
         $this->setAnonymousUser($basket, $user);
         $basket->setShipping($shippingId);
         $basket->onUpdate();
@@ -123,13 +136,13 @@ class PaypalCheckout
         }
 
         // Checking if any additional discount was applied after we returned from PayPal.
-        if ($basketPrice != $details->getAmount()) {
+        if ($basketPrice != $details->purchase_units[0]->amount) {
             throw new OrderTotalChanged();
         }
 
-	    EshopRegistry::getSession()->setVariable("oepaypal-payerId", $details->getPayerId());
+	    EshopRegistry::getSession()->setVariable("oepaypal-payerId", $details->payer->payer_id);
 	    EshopRegistry::getSession()->setVariable("oepaypal-userId", $user->getId());
-	    EshopRegistry::getSession()->setVariable("oepaypal-basketAmount", $details->getAmount());
+	    EshopRegistry::getSession()->setVariable("oepaypal-basketAmount", $details->purchase_units[0]->amount->value);
 
         $next = "order";
 
@@ -142,44 +155,20 @@ class PaypalCheckout
         return $next;
     }
 
-	protected function initializeUserData(ResponseGetExpressCheckoutDetails $details): EshopUserModel
-	{
-		$userEmail = $details->getEmail();
-		$loggedUser = EshopRegistry::getSession()->getUser();
-		if ($loggedUser) {
-			$userEmail = $loggedUser->oxuser__oxusername->value;
-		}
+    private function validateExpressCheckoutDetails(stdClass $details): void
+    {
+	    $status = property_exists($details, 'status') ? $details->status : 'UNKNOWN';
+	    if ('APPROVED' !== $status) {
+		    throw OrderError::byDetailsStatus($status);
+	    }
+	    if (!property_exists($details, 'payer')) {
+		    throw OrderError::byDetailsPayer();
+	    }
+	    if (!property_exists($details, 'purchase_units') || !is_array($details->purchase_units)) {
+		    throw OrderError::byDetails('purchase_units missing');
+	    }
+    }
 
-		/** @var EshopUserModel $user */
-		$user = oxNew(EshopUserModel::class);
-		if ($userId = $user->isRealPayPalUser($userEmail)) {
-			// if user exist
-			$user->load($userId);
-
-			if (!$loggedUser) {
-				if (!$user->isSamePayPalUser($details)) {
-					$exception = new EshopStandardException();
-					$exception->setMessage('OEPAYPAL_ERROR_USER_ADDRESS');
-					throw $exception;
-				}
-			} elseif (!$user->isSameAddressUserPayPalUser($details) || !$user->isSameAddressPayPalUser($details)) {
-				// user has selected different address in PayPal (not equal with usr shop address)
-				// so adding PayPal address as new user address to shop user account
-				$this->createUserAddress($details, $userId);
-			} else {
-				// removing custom shipping address ID from session as user uses billing
-				// address for shipping
-				EshopRegistry::getSession()->deleteVariable('deladrid');
-			}
-		} else {
-			$user->createPayPalUser($details);
-		}
-
-		EshopRegistry::getSession()->setVariable('usr', $user->getId());
-
-		return $user;
-	}
-	
 	/**
      * Returns transaction mode.
      *
@@ -192,7 +181,7 @@ class PaypalCheckout
         $transactionMode = $this->paypalConfig->getTransactionMode();
 
         if ($transactionMode == "Automatic") {
-            $outOfStockValidator = new \OxidEsales\PayPalModule\Model\OutOfStockValidator();
+            $outOfStockValidator = new PayPalOutOfStockValidator();
             $outOfStockValidator->setBasket($basket);
             $outOfStockValidator->setEmptyStockLevel($this->paypalConfig->getEmptyStockLevel());
 
@@ -233,21 +222,6 @@ class PaypalCheckout
         }
 
         return $result;
-    }
-
-    /**
-     * Creates user address and sets address id into session
-     *
-     * @param \OxidEsales\PayPalModule\Model\Response\ResponseGetExpressCheckoutDetails $details User address info.
-     * @param string                                                                    $userId  User id.
-     *
-     * @return bool
-     */
-    protected function createUserAddress($details, $userId)
-    {
-        $address = oxNew(\OxidEsales\Eshop\Application\Model\Address::class);
-
-        return $address->createPayPalAddress($details, $userId);
     }
 
     /**
@@ -368,31 +342,7 @@ class PaypalCheckout
 
         return $valid;
     }
-
-	protected function getReturnUrl(string $controllerKey): string
-	{
-		return EshopRegistry::getSession()->processUrl($this->baseUrl . "&cl=" . $controllerKey . "&fnc=getExpressCheckoutDetails");
-	}
-
-	protected function getCancelUrl(string $controllerKey): string
-	{
-		$cancelURLFromRequest = EshopRegistry::getRequest()->getRequestParameter('oePayPalCancelURL');
-		$cancelUrl = EshopRegistry::getSession()->processUrl($this->baseUrl . "&cl=basket");
-
-		if ($cancelURLFromRequest) {
-			$cancelUrl = html_entity_decode(urldecode($cancelURLFromRequest));
-		} elseif ($requestedControllerKey = $this->getRequestedControllerKey()) {
-			$cancelUrl = EshopRegistry::getSession()->processUrl($this->baseUrl . '&cl=' . $requestedControllerKey);
-		}
-
-		return $cancelUrl;
-	}
-
-	protected function getCallBackUrl()
-	{
-		return EshopRegistry::getSession()->processUrl($this->baseUrl . "&cl=oepaypalcallback&fnc=processCallBack");
-	}
-
+	
 	/**
      * PayPal express checkout might be called before user is set to basket.
      * This happens if user is not logged in to the Shop

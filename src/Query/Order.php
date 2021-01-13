@@ -20,12 +20,17 @@ class Order
 		$this->applicationContext = $applicationContext;
 	}
 
-	public function getCreateOrderQuery(string $formattedTotal, string $currencyCode) :string
+	public function getCreateOrderQuery(
+		string $formattedTotal,
+		string $currencyCode,
+		string $transactionMode,
+		bool   $paypalExpress = true
+	) :string
 	{
 		$query = array_merge(
-		         $this->getIntent(),
+		         $this->getIntent($transactionMode),
 		         $this->getPurchaseUnits($formattedTotal, $currencyCode),
-		         $this->getApplicationContext()
+		         $this->getApplicationContext($paypalExpress)
 		);
 
 		return json_encode($query);
@@ -47,8 +52,13 @@ class Order
 		return $purchaseUnits;
 	}
 
-	private function getApplicationContext(): array
+	private function getApplicationContext(bool $paypalExpress = true): array
 	{
+		$shippingPreference = $this->applicationContext->getPayPalExpressShippingPreference();
+		if (!$paypalExpress) {
+			$shippingPreference = $this->applicationContext->getPayPalStandardShippingPreference();
+		}
+
 		$applicationContext = [
 			'application_context' =>
 				[
@@ -56,7 +66,7 @@ class Order
 					'cancel_url'          => $this->applicationContext->getCancelUrl('oepaypalexpresscheckoutdispatcher'),
 					'locale'              => $this->applicationContext->getLocaleCode(),
 					'landing_page'        => $this->applicationContext->getPayPalLandingPage(),
-					'shipping_preference' => $this->applicationContext->getPayPalShippingPreference(),
+					'shipping_preference' => $shippingPreference,
 					'user_action'         => $this->applicationContext->getPayPalUserAction()
 				]
 		];
@@ -64,10 +74,10 @@ class Order
 		return $applicationContext;
 	}
 
-	private function getIntent(): array
+	private function getIntent(string $transactionMode): array
 	{
 		$intent = [
-			'intent' => ('Sale' == $this->applicationContext->getTransactionMode()) ? "CAPTURE" : "AUTHORIZE"
+			'intent' => ('Sale' == $transactionMode) ? "CAPTURE" : "AUTHORIZE"
 		];
 
 		return $intent;

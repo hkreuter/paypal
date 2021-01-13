@@ -11,7 +11,7 @@ use OxidEsales\PayPalModule\Core\PayPalService;
 use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\HRPayPalModule\Model\PaypalCallback;
 use OxidEsales\PayPalModule\Core\Logger as PayPalLogger;
-use OxidEsales\HRPayPalModule\Model\Tools as PayPalTools;
+use OxidEsales\HRPayPalModule\Service\Tools as PayPalTools;
 
 class CallbackController extends \OxidEsales\Eshop\Application\Controller\FrontendController {
 	/**

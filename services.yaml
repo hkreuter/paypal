@@ -6,7 +6,7 @@ services:
 
   OxidEsales\HRPayPalModule\:
       resource: 'src/*'
-      exclude: 'src/**/{Exception,Shop}'
+      exclude: 'src/**/{Exception,Shop,Core}'
       public: true
 
   OxidEsales\PayPalModule\Core\Config:
