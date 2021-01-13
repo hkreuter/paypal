@@ -45,7 +45,7 @@ class PaypalOrder
 	    string $currencyCode
 	): string
 	{
-		$query = $this->orderQuery->getQuery($formattedTotal, $currencyCode);
+		$query = $this->orderQuery->getCreateOrderQuery($formattedTotal, $currencyCode);
         $raw = $this->queryPayPal($requestId, $query);
         $result = $this->decodeResponse($raw);
 

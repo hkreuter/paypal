@@ -20,7 +20,7 @@ class Order
 		$this->applicationContext = $applicationContext;
 	}
 
-	public function getQuery(string $formattedTotal, string $currencyCode) :string
+	public function getCreateOrderQuery(string $formattedTotal, string $currencyCode) :string
 	{
 		$query = array_merge(
 		         $this->getIntent(),
