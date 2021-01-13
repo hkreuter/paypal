@@ -116,14 +116,4 @@ class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller
 		}
 		return $return;
 	}
-
-	private function getBaseUrl()
-	{
-		$url = EshopRegistry::getConfig()->getSslShopUrl() . "index.php?lang=" .
-		       EshopRegistry::getLang()->getBaseLanguage() . "&sid=" . EshopRegistry::getSession()->getId() .
-		       "&rtoken=" . EshopRegistry::getSession()->getRemoteAccessToken();
-		$url .= "&shp=" . EshopRegistry::getConfig()->getShopId();
-
-		return $url;
-	}
 }
