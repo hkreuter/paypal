@@ -81,7 +81,7 @@ class PaypalExpressAddress
 
 	private function getNames(): array
 	{
-		$fullName = (string) $this->details->full_name;
+		$fullName = property_exists($this->details, 'full_name') ? (string) $this->details->full_name : '';
 		$names = explode(' ', $fullName);
 		$lastName = array_pop($names);
 
@@ -95,33 +95,34 @@ class PaypalExpressAddress
 
 	private function getCountryCode()
 	{
-		return (string) $this->details->country_code;
+		return property_exists($this->details, 'country_code') ? (string) $this->details->country_code : '';
 	}
 
 	private function getPostalCode(): string
 	{
-		return (string) $this->details->postal_code;
+		return property_exists($this->details, 'postal_code') ? (string) $this->details->postal_code : '';
 	}
 
 	private function getCity(): string
 	{
-		return (string) $this->details->admin_area_2;
+		return property_exists($this->details, 'admin_area_2') ? (string) $this->details->admin_area_2 : '';
 	}
 
 	private function getState(): string
 	{
-		return (string) $this->details->admin_area_1;
+		return property_exists($this->details, 'admin_area_1') ? (string) $this->details->admin_area_1 : '';
 	}
 
-	private function getAdditionalAddressInformation()
+	private function getAdditionalAddressInformation(): string
 	{
-		return (string) $this->details->address_line_2;
+		return property_exists($this->details, 'address_line_2') ? (string) $this->details->address_line_2 : '';
 	}
 
 	private function getStreetAndNumber(): array
 	{
 		$address = [];
-		$shipToStreet = trim((string) $this->details->address_line_1);
+		$raw = property_exists($this->details, 'address_line_1') ? (string) $this->details->address_line_1 : '';
+		$shipToStreet = trim($raw);
 
 		//search for street number at end of address_line_1
 		preg_match("/(.*\S)\s+(\d+\s*\S*)$/", $shipToStreet, $address);
