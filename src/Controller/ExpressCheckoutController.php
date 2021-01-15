@@ -7,12 +7,14 @@
 namespace OxidEsales\HRPayPalModule\Controller;
 
 use OxidEsales\Eshop\Core\Registry as EshopRegistry;
+use OxidEsales\Eshop\Application\Model\Address as EshopAddressModel;
+use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
+use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
+use OxidEsales\PayPalModule\Core\Config as PayPalConfig;
 use OxidEsales\HRPayPalModule\Model\PaypalCheckout;
 use OxidEsales\HRPayPalModule\Exception\PaymentNotValidForUserCountry;
 use OxidEsales\HRPayPalModule\Exception\ShippingMethodNotValid;
 use OxidEsales\HRPayPalModule\Exception\OrderTotalChanged;
-use OxidEsales\Eshop\Core\Exception\StandardException as EshopStandardException;
-use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 
 /**
  * PayPal Express Checkout Controller class
@@ -70,12 +72,40 @@ class ExpressCheckoutController extends \OxidEsales\Eshop\Application\Controller
 
 		try {
 			$basket = EshopRegistry::getSession()->getBasket();
+			EshopRegistry::getSession()->setVariable('deladrid', null); //delivery address is provided by PayPal
+
+			//TODO: is there any way to chose the shipping on PP side in the PP rest api?
+			//PayPal documentation looks like shipping can be configured in the PayPal account, but
+			//in sandbox nothing was to be found.
+			$basket->setShipping('oxidstandard');
 
 			// Remove flag of "new item added" to not show "Item added" popup when returning to checkout from paypal
 			$basket->isNewItemAdded();
 
 			$userToken = EshopRegistry::getSession()->getVariable('oepaypal-token');
-			$next = $checkoutModel->processExpressCheckoutDetails($basket, $userToken);
+			$basket = $checkoutModel->processExpressCheckoutDetails($basket, $userToken);
+			$user = $basket->getBasketUser();
+
+			EshopRegistry::getSession()->setVariable('usr', $user->getId());
+			EshopRegistry::getSession()->setVariable('deladrid', $user->getPayPalDeliveryAddressId());
+			EshopRegistry::getSession()->setVariable("oepaypal-userId", $user->getId());
+			EshopRegistry::getSession()->setVariable("oepaypal-payerId", $user->getPayPalPayerId());
+	        EshopRegistry::getSession()->setVariable("oepaypal-basketAmount", $basket->getPayPalBasketAmount());
+
+			$next = "order";
+
+			$paypalConfig = $container->get(PayPalConfig::class);
+			if ($paypalConfig->finalizeOrderOnPayPalSide()) {
+				$deliveryAddress = oxNew(EshopAddressModel::class);
+				$deliveryAddress->load((string) $user->getPayPalDeliveryAddressId());
+
+				$next .= "?fnc=execute";
+				$next .= "&sDeliveryAddressMD5=" . $user->getEncodedDeliveryAddress() .
+				         $deliveryAddress->getEncodedDeliveryAddress();
+				$next .= "&stoken=" . EshopRegistry::getSession()->getSessionChallengeToken();
+			}
+
+			return $next;
 
 		} catch (PaymentNotValidForUserCountry $exception) {
 			EshopRegistry::getUtilsView()->addErrorToDisplay( 'MESSAGE_PAYMENT_SELECT_ANOTHER_PAYMENT' );

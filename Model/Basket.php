@@ -30,6 +30,9 @@ use OxidEsales\Eshop\Application\Model\Article as EshopArticle;
  */
 class Basket extends Basket_parent
 {
+	/** @var float */
+	protected $paypalBasketAmount;
+
     /**
      * Checks if products in basket ar virtual and does not require real delivery.
      * Returns TRUE if virtual
@@ -282,5 +285,15 @@ class Basket extends Basket_parent
         }
 
         return $return;
+    }
+
+	public function setPayPalBasketAmount(float $paypalBasketAmount): void
+	{
+		$this->paypalBasketAmount = $paypalBasketAmount;
+	}
+
+    public function getPayPalBasketAmount(): float
+    {
+        return $this->paypalBasketAmount;
     }
 }

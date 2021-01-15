@@ -37,6 +37,7 @@ class PayPalOrderDetails
 	public function getOrderDetails(string $userToken): stdClass
 	{
         $raw = $this->getFromPayPal($userToken);
+        #file_put_contents('/var/www/oxideshop/source/log/pp_result.txt', $raw);
         $result = $this->decodeResponse($raw);
 
 		if (!array_key_exists('id', $result)) {

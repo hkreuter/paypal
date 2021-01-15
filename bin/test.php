@@ -11,13 +11,17 @@ use OxidEsales\HRPayPalModule\Service\PaypalOrder;
 use OxidEsales\HRPayPalModule\Service\PaypalOrderDetails;
 use OxidEsales\HRPayPalModule\Service\PaypalConfiguration;
 use OxidEsales\Eshop\Core\Registry as EshopRegistry;
+use OxidEsales\Eshop\Application\Model\Basket as EshopBasketModel;
+use OxidEsales\HRPayPalModule\Core\PaypalExpressUser;
+use OxidEsales\HRPayPalModule\Core\PaypalExpressAddress;
+use OxidEsales\HRPayPalModule\Model\PaypalCheckout;
 
 function initOrder()
 {
 	$container = ContainerFactory::getInstance()->getContainer();
 	$caller = $container->get(PaypalOrder::class);
 	$requestId = EshopRegistry::getUtilsObject()->generateUId();
-	$userToken = $caller->getUserToken($requestId, 100, 'EUR', 'Authorize');
+	$userToken = $caller->getUserToken($requestId, 89.70, 'EUR', 'Authorize');
 
 	/** @var PaypalConfiguration $configuration */
 	$configuration = $container->get(PaypalConfiguration::class);
@@ -27,17 +31,37 @@ function initOrder()
 	return $userToken;
 }
 
-try {
-	#$userToken = initOrder();
-    $userToken = '3TF0547591077022U';
-
+function handleUser(string $userToken)
+{
 	$container = ContainerFactory::getInstance()->getContainer();
 	$caller = $container->get(PaypalOrderDetails::class);
-    #var_export($caller->getOrderDetails($userToken));
-    $details = $caller->getOrderDetails($userToken);
+	#var_export($caller->getOrderDetails($userToken));
+	$details = $caller->getOrderDetails($userToken);
 
-    #var_export($details->purchase_units[0]->shipping->address);
-    var_export($details->payer);
+	/** @var PaypalExpressAddress $paypalExpressAddress */
+	$paypalExpressAddress = new PaypalExpressAddress($details);
+
+	/** @var PaypalExpressUser $userHandler */
+	$userHandler = new PaypalExpressUser($details->payer, $paypalExpressAddress);
+	$user = $userHandler->getUser();
+
+	return $user->getPayPalDeliveryAddressId();
+}
+
+try {
+   # $userToken = initOrder();
+   # exit($userToken);
+
+	$userToken = '7CC18184SH7588500';
+
+	$basket = oxNew(EshopBasketModel::class);
+	$basket->setPayment("oxidpaypal");
+	$basket->setShipping('oxidstandard');
+	$basket->addToBasket('dc5ffdf380e15674b56dd562a7cb6aec', 3);
+
+	$container = ContainerFactory::getInstance()->getContainer();
+	$caller = $container->get(PaypalCheckout::class);
+	$basket = $caller->processExpressCheckoutDetails($basket, $userToken);
 
 } catch ( \Exception $exception) {
 	echo PHP_EOL . 'exception' . PHP_EOL;

@@ -28,12 +28,43 @@ namespace OxidEsales\PayPalModule\Model;
  */
 class User extends User_parent
 {
-    /**
+	/** @var string|null */
+	protected $paypalDeliveryAddressId = null;
+
+	/** @var string */
+	protected $paypalPayerId = '';
+
+	/**
      * CallBack user mode
      *
      * @var bool
      */
     protected $callBackUser = false;
+
+	public function ensureAutoGroups($countryId)
+	{
+		$this->_setAutoGroups($countryId);
+	}
+
+	public function setPayPalDeliveryAddressId(string $addressId = null): void
+	{
+        $this->paypalDeliveryAddressId = $addressId;
+	}
+
+	public function getPayPalDeliveryAddressId(): ?string
+	{
+		return $this->paypalDeliveryAddressId;
+	}
+
+	public function setPayPalPayerId(string $payerId): void
+	{
+		$this->paypalPayerId = $payerId;
+	}
+
+	public function getPayPalPayerId(): string
+	{
+		return $this->paypalPayerId;
+	}
 
     /**
      * Check if exist real user (with password) for passed email
@@ -54,11 +85,6 @@ class User extends User_parent
         }
 
         return false;
-    }
-
-    public function ensureAutoGroups($countryId)
-    {
-	    $this->_setAutoGroups($countryId);
     }
 
     /**

@@ -20,9 +20,13 @@ class PaypalExpressAddress
 	/** @var stdClass */
 	private $details;
 
+	/** @var stdClass */
+	private $name;
+
 	public function __construct(stdClass $details)
 	{
 		$this->details = $details->purchase_units[0]->shipping->address;
+		$this->name = $details->purchase_units[0]->shipping->name;
 		$this->fields = $this->getAddressFields();
 	}
 
@@ -49,7 +53,6 @@ class PaypalExpressAddress
 			'oxstreet'    => $address['street'],
 			'oxstreetnr'  => $address['streetnr'],
 			'oxaddinfo'   => $this->getAdditionalAddressInformation(),
-			'oxustid'     => '',
 			'oxcity'      => $this->getCity(),
 			'oxcountryid' => $countryId,
 			'oxstateid'   => $this->getStateId($countryId),
@@ -81,7 +84,7 @@ class PaypalExpressAddress
 
 	private function getNames(): array
 	{
-		$fullName = property_exists($this->details, 'full_name') ? (string) $this->details->full_name : '';
+		$fullName = property_exists($this->name, 'full_name') ? (string) $this->name->full_name : '';
 		$names = explode(' ', $fullName);
 		$lastName = array_pop($names);
 

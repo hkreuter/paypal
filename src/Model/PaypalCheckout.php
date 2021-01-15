@@ -84,7 +84,6 @@ class PaypalCheckout
 		    $basket->getBasketCurrency()->name,
 		    $this->getTransactionMode($basket)
 	    );
-	    \OxidEsales\Eshop\Core\Registry::getLogger()->error($token);
 
 	    return $token;
     }
@@ -101,7 +100,7 @@ class PaypalCheckout
      *
      * @return string
      */
-    public function processExpressCheckoutDetails(EshopBasketModel $basket, string $userToken): string
+    public function processExpressCheckoutDetails(EshopBasketModel $basket, string $userToken): EshopBasketModel
     {
 	    $details = $this->paypalOrderDetails->getOrderDetails($userToken);
 
@@ -115,18 +114,13 @@ class PaypalCheckout
 	    $sessionUser = EshopRegistry::getSession()->getUser();
 	    $sessionUser = $sessionUser ?: null;
 	    $user = $userHandler->getUser($sessionUser);
-
-	    EshopRegistry::getSession()->setVariable('usr', $user->getId());
+	    $user->setPayPalPayerId($details->payer->payer_id);
 
 	    if (!$this->isPaymentValidForUserCountry($user)) {
             throw new PaymentNotValidForUserCountry();
         }
 
-        //TODO: is there any way to chose the shipping on PP side in the PP rest api?
-	    $shippingId = 'oxidstandard';
-
         $this->setAnonymousUser($basket, $user);
-        $basket->setShipping($shippingId);
         $basket->onUpdate();
         $basket->calculateBasket(true);
         $basketPrice = $basket->getPrice()->getBruttoPrice();
@@ -136,23 +130,12 @@ class PaypalCheckout
         }
 
         // Checking if any additional discount was applied after we returned from PayPal.
-        if ($basketPrice != $details->purchase_units[0]->amount) {
+        if ($basketPrice != $details->purchase_units[0]->amount->value) {
             throw new OrderTotalChanged();
         }
+        $basket->setPayPalBasketAmount((float) $details->purchase_units[0]->amount->value);
 
-	    EshopRegistry::getSession()->setVariable("oepaypal-payerId", $details->payer->payer_id);
-	    EshopRegistry::getSession()->setVariable("oepaypal-userId", $user->getId());
-	    EshopRegistry::getSession()->setVariable("oepaypal-basketAmount", $details->purchase_units[0]->amount->value);
-
-        $next = "order";
-
-        if ($this->paypalConfig->finalizeOrderOnPayPalSide()) {
-            $next .= "?fnc=execute";
-            $next .= "&sDeliveryAddressMD5=" . $user->getEncodedDeliveryAddress();
-            $next .= "&stoken=" . EshopRegistry::getSession()->getSessionChallengeToken();
-        }
-
-        return $next;
+        return $basket;
     }
 
     private function validateExpressCheckoutDetails(stdClass $details): void
